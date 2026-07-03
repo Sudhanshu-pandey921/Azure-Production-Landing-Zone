@@ -16,7 +16,6 @@ stages:
             inputs:
               provider: 'azurerm'
               command: 'init'
-              commandOptions: '-backend-config=backend/dev.hcl'
               backendServiceArm: 'su-sc'
               backendAzureRmStorageAccountName: 'pipelinestg1'
               backendAzureRmContainerName: 'pipelinecnt1'
