@@ -14,40 +14,13 @@ stages:
     displayName: Terraform Init
 
     steps:
-
-    - checkout: self
-
-    # Debug Azure Login
-    - task: AzureCLI@2
-      displayName: "Debug Azure Login & Storage Access"
-      inputs:
-        azureSubscription: 'su-sc'
-        scriptType: 'ps'
-        scriptLocation: 'inlineScript'
-        inlineScript: |
-          Write-Host "===== ACCOUNT ====="
-          az account show
-
-          Write-Host "===== USER ====="
-          az account show --query user
-
-          Write-Host "===== STORAGE ACCOUNT ====="
-          az storage account show --name pipelinestg1
-
-          Write-Host "===== STORAGE BLOB TEST (AAD LOGIN) ====="
-          az storage blob list `
-            --account-name pipelinestg1 `
-            --container-name pipelinecnt1 `
-            --auth-mode login
-
-    # Terraform Init
-    - task: TerraformTask@5
-      displayName: "Terraform Init"
-      inputs:
-        provider: 'azurerm'
-        command: 'init'
-        backendServiceArm: 'su-sc'
-        backendAzureRmStorageAccountName: 'pipelinestg1'
-        backendAzureRmContainerName: 'pipelinecnt1'
-        backendAzureRmKey: 'pipeline.tfstate'
-        commandOptions: '-backend-config=backend/dev.hcl'
+      - task: TerraformTask@5
+        displayName: "Terraform Init"
+        inputs:
+          provider: 'azurerm'
+          command: 'init'
+          backendServiceArm: 'su-sc'
+          backendAzureRmStorageAccountName: 'pipelinestg1'
+          backendAzureRmContainerName: 'pipelinecnt1'
+          backendAzureRmKey: 'pipeline.tfstate'
+          commandOptions: '-backend-config=backend/dev.hcl'
