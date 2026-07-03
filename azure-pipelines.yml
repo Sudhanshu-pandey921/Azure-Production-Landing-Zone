@@ -1,0 +1,23 @@
+trigger:
+ branches:
+   include:
+     - main
+
+pool:  prod-pool
+
+stages:
+  - stage: FirstStage
+    displayName: Init
+    jobs:
+      - job: init
+        displayName: Terraform Init
+        steps:
+          - task: TerraformTask@5
+            inputs:
+              provider: 'azurerm'
+              command: 'init'
+              commandOptions: '-backend-config=backend/dev.hcl'
+              backendServiceArm: 'su-sc'
+              backendAzureRmStorageAccountName: 'pipelinestg1'
+              backendAzureRmContainerName: 'pipelinecnt1'
+              backendAzureRmKey: 'pipeline.tfstate'
