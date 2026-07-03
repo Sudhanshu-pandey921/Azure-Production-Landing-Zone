@@ -12,6 +12,14 @@ stages:
       - job: init
         displayName: Terraform Init
         steps:
+
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: 'su-sc'
+              scriptType: ps
+              scriptLocation: inlineScript
+              inlineScript: |
+                az account show
           - task: TerraformTask@5
             inputs:
               provider: 'azurerm'
