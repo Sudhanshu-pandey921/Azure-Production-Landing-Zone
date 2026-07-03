@@ -16,16 +16,10 @@ stages:
             inputs:
               provider: 'azurerm'
               command: 'init'
+              commandOptions: '-backend-config=backend/dev.hcl'
               backendServiceArm: 'su-sc'
               backendAzureRmStorageAccountName: 'pipelinestg1'
               backendAzureRmContainerName: 'pipelinecnt1'
               backendAzureRmKey: 'pipeline.tfstate'
 
-          - task: AzureCLI@2
-            inputs:
-              azureSubscription: 'su-sc'
-              scriptType: 'ps'
-              scriptLocation: 'inlineScript'
-              inlineScript: |
-                az account show
-                az storage container list --account-name pipelinestg1 --auth-mode login
+        
