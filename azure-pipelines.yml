@@ -3,24 +3,79 @@ trigger:
     include:
       - main
 
-pool: prod-pool
+pool:
+  name: prod-pool
 
 stages:
-- stage: FirstStage
-  displayName: Init
+
+#==========================
+# Stage 1 - Terraform Init
+#==========================
+- stage: Init
+  displayName: Terraform Init
 
   jobs:
-  - job: init
+  - job: Init
     displayName: Terraform Init
 
     steps:
-      - task: TerraformTask@5
-        displayName: "Terraform Init"
-        inputs:
-          provider: 'azurerm'
-          command: 'init'
-          backendServiceArm: 'su-sc'
-          backendAzureRmStorageAccountName: 'pipelinestg1'
-          backendAzureRmContainerName: 'pipelinecnt1'
-          backendAzureRmKey: 'pipeline.tfstate'
-          commandOptions: '-backend-config=backend/dev.hcl'
+    - checkout: self
+
+    - task: TerraformTask@5
+      displayName: Terraform Init
+      inputs:
+        provider: azurerm
+        command: init
+
+        backendServiceArm: 'su-sc'
+        backendAzureRmResourceGroupName: 'YOUR-BACKEND-RG'
+        backendAzureRmStorageAccountName: 'pipelinestg1'
+        backendAzureRmContainerName: 'pipelinecnt1'
+        backendAzureRmKey: 'pipeline.tfstate'
+
+        workingDirectory: '$(System.DefaultWorkingDirectory)'
+
+#==========================
+# Stage 2 - Terraform Plan
+#==========================
+- stage: Plan
+  displayName: Terraform Plan
+  dependsOn: Init
+
+  jobs:
+  - job: Plan
+    displayName: Terraform Plan
+
+    steps:
+    - checkout: self
+
+    - task: TerraformTask@5
+      displayName: Terraform Init
+      inputs:
+        provider: azurerm
+        command: init
+
+        backendServiceArm: 'su-sc'
+        backendAzureRmResourceGroupName: 'YOUR-BACKEND-RG'
+        backendAzureRmStorageAccountName: 'pipelinestg1'
+        backendAzureRmContainerName: 'pipelinecnt1'
+        backendAzureRmKey: 'pipeline.tfstate'
+
+        workingDirectory: '$(System.DefaultWorkingDirectory)'
+
+    - task: TerraformTask@5
+      displayName: Terraform Plan
+      inputs:
+        provider: azurerm
+        command: plan
+
+        workingDirectory: '$(System.DefaultWorkingDirectory)'
+
+        commandOptions: >
+          -var-file="environments/dev/terraform.tfvars"
+          -out="dev.tfplan"
+
+        environmentServiceNameAzureRM: 'su-sc'
+        
+
+          
