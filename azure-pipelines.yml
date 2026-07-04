@@ -6,17 +6,24 @@ trigger:
 pool:
   name: prod-pool
 
-stages:
+variables:
+  backendServiceConnection: 'su-sc'
+  backendRG: 'YOUR_BACKEND_RG'
+  backendStorage: 'pipelinestg1'
+  backendContainer: 'pipelinecnt1'
+  backendKey: 'pipeline.tfstate'
+  workingDir: '$(System.DefaultWorkingDirectory)'
 
-#==========================
+#=========================
 # Stage 1 - Terraform Init
-#==========================
+#=========================
+stages:
 - stage: Init
   displayName: Terraform Init
 
   jobs:
   - job: Init
-    displayName: Terraform Init
+    displayName: Initialize Terraform
 
     steps:
     - checkout: self
@@ -27,20 +34,55 @@ stages:
         provider: azurerm
         command: init
 
-        backendServiceArm: 'su-sc'
-        backendAzureRmResourceGroupName: 'YOUR-BACKEND-RG'
-        backendAzureRmStorageAccountName: 'pipelinestg1'
-        backendAzureRmContainerName: 'pipelinecnt1'
-        backendAzureRmKey: 'pipeline.tfstate'
+        backendServiceArm: $(backendServiceConnection)
+        backendAzureRmResourceGroupName: $(backendRG)
+        backendAzureRmStorageAccountName: $(backendStorage)
+        backendAzureRmContainerName: $(backendContainer)
+        backendAzureRmKey: $(backendKey)
 
-        workingDirectory: '$(System.DefaultWorkingDirectory)'
+        workingDirectory: $(workingDir)
 
-#==========================
-# Stage 2 - Terraform Plan
-#==========================
+#=========================
+# Stage 2 - Validate
+#=========================
+- stage: Validate
+  displayName: Terraform Validate
+  dependsOn: Init
+
+  jobs:
+  - job: Validate
+    displayName: Validate Terraform
+
+    steps:
+    - checkout: self
+
+    - task: TerraformTask@5
+      displayName: Terraform Init
+      inputs:
+        provider: azurerm
+        command: init
+
+        backendServiceArm: $(backendServiceConnection)
+        backendAzureRmResourceGroupName: $(backendRG)
+        backendAzureRmStorageAccountName: $(backendStorage)
+        backendAzureRmContainerName: $(backendContainer)
+        backendAzureRmKey: $(backendKey)
+
+        workingDirectory: $(workingDir)
+
+    - task: TerraformTask@5
+      displayName: Terraform Validate
+      inputs:
+        provider: azurerm
+        command: validate
+        workingDirectory: $(workingDir)
+
+#=========================
+# Stage 3 - Plan
+#=========================
 - stage: Plan
   displayName: Terraform Plan
-  dependsOn: Init
+  dependsOn: Validate
 
   jobs:
   - job: Plan
@@ -55,27 +97,64 @@ stages:
         provider: azurerm
         command: init
 
-        backendServiceArm: 'su-sc'
-        backendAzureRmResourceGroupName: 'YOUR-BACKEND-RG'
-        backendAzureRmStorageAccountName: 'pipelinestg1'
-        backendAzureRmContainerName: 'pipelinecnt1'
-        backendAzureRmKey: 'pipeline.tfstate'
+        backendServiceArm: $(backendServiceConnection)
+        backendAzureRmResourceGroupName: $(backendRG)
+        backendAzureRmStorageAccountName: $(backendStorage)
+        backendAzureRmContainerName: $(backendContainer)
+        backendAzureRmKey: $(backendKey)
 
-        workingDirectory: '$(System.DefaultWorkingDirectory)'
+        workingDirectory: $(workingDir)
 
     - task: TerraformTask@5
       displayName: Terraform Plan
       inputs:
         provider: azurerm
         command: plan
-
-        workingDirectory: '$(System.DefaultWorkingDirectory)'
-
+        workingDirectory: $(workingDir)
+        environmentServiceNameAzureRM: $(backendServiceConnection)
         commandOptions: >
-          -var-file="environments/dev/terraform.tfvars"
-          -out="dev.tfplan"
+          -var-file=environments/dev/terraform.tfvars
+          -out=dev.tfplan
 
-        environmentServiceNameAzureRM: 'su-sc'
-        
+#=========================
+# Stage 4 - Apply
+#=========================
+- stage: Apply
+  displayName: Terraform Apply
+  dependsOn: Plan
 
-          
+  jobs:
+  - deployment: Apply
+    displayName: Apply Infrastructure
+
+    environment: production
+
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+
+          - checkout: self
+
+          - task: TerraformTask@5
+            displayName: Terraform Init
+            inputs:
+              provider: azurerm
+              command: init
+
+              backendServiceArm: $(backendServiceConnection)
+              backendAzureRmResourceGroupName: $(backendRG)
+              backendAzureRmStorageAccountName: $(backendStorage)
+              backendAzureRmContainerName: $(backendContainer)
+              backendAzureRmKey: $(backendKey)
+
+              workingDirectory: $(workingDir)
+
+          - task: TerraformTask@5
+            displayName: Terraform Apply
+            inputs:
+              provider: azurerm
+              command: apply
+              workingDirectory: $(workingDir)
+              environmentServiceNameAzureRM: $(backendServiceConnection)
+              commandOptions: dev.tfplan
