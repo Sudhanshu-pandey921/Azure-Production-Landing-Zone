@@ -6,9 +6,7 @@ trigger:
 pool: prod-pool
 
 variables:
-     backendServiceConnection: 'su-sc'
-     brg: 'backendrg1'
-     bstg: 'backendstg1'
+  - group: variable-group
 
 
 ## stage 1- fmt
@@ -63,7 +61,7 @@ stages:
             provider: 'azurerm'
             command: 'init'
             backendServiceArm: '$(backendServiceConnection)'
-            backendAzureRmResourceGroupName: 'backendrg1'
+            backendAzureRmResourceGroupName: '$(brg)'
             backendAzureRmStorageAccountName: '$(bstg)'
             backendAzureRmContainerName: 'backendcnt10'
             backendAzureRmKey: 'pipeline.tfstate'
@@ -89,7 +87,7 @@ stages:
             provider: 'azurerm'
             command: 'init'
             backendServiceArm: '$(backendServiceConnection)'
-            backendAzureRmResourceGroupName: 'backendrg1'
+            backendAzureRmResourceGroupName: '$(brg)'
             backendAzureRmStorageAccountName: '$(bstg)'
             backendAzureRmContainerName: 'backendcnt10'
             backendAzureRmKey: 'pipeline.tfstate'
@@ -108,55 +106,55 @@ stages:
             artifact: 'tfplan'
 
             
-## stage-5- Manual Approval
-  - stage: ManualApproval
-    displayName:  Manual Approval
-    dependsOn: plan
-    jobs:
-      - job:  ManualApproval
-        pool: server
+# ## stage-5- Manual Approval
+#   - stage: ManualApproval
+#     displayName:  Manual Approval
+#     dependsOn: plan
+#     jobs:
+#       - job:  ManualApproval
+#         pool: server
         
-        steps:
-          - task: ManualValidation@1
-            inputs:
-              notifyUsers: 'sp2529437@gmail.com'
-              approvers: 'sp2529437@gmail.com'
-              instructions: 'please verify before apply'
+#         steps:
+#           - task: ManualValidation@1
+#             inputs:
+#               notifyUsers: 'sp2529437@gmail.com'
+#               approvers: 'sp2529437@gmail.com'
+#               instructions: 'please verify before apply'
 
-## stage-6 apply
-  - stage: Apply
-    displayName: terraform apply
-    dependsOn: ManualApproval
+# ## stage-6 apply
+#   - stage: Apply
+#     displayName: terraform apply
+#     dependsOn: ManualApproval
 
-    jobs:
-      - job: terraformapply
-        steps:
+#     jobs:
+#       - job: terraformapply
+#         steps:
         
-        - checkout: self
+#         - checkout: self
 
-        - task: TerraformTask@5
-          inputs:
-            provider: 'azurerm'
-            command: 'init'
-            backendServiceArm: '$(backendServiceConnection)'
-            backendAzureRmResourceGroupName: 'backendrg1'
-            backendAzureRmStorageAccountName: '$(bstg)'
-            backendAzureRmContainerName: 'backendcnt10'
-            backendAzureRmKey: 'pipeline.tfstate'
-
-
-        - task: DownloadPipelineArtifact@2
-          inputs:
-            artifact: 'tfplan'
-            targetPath: '$(System.DefaultWorkingDirectory)'
+#         - task: TerraformTask@5
+#           inputs:
+#             provider: 'azurerm'
+#             command: 'init'
+#             backendServiceArm: '$(backendServiceConnection)'
+#             backendAzureRmResourceGroupName: '$(brg)'
+#             backendAzureRmStorageAccountName: '$(bstg)'
+#             backendAzureRmContainerName: 'backendcnt10'
+#             backendAzureRmKey: 'pipeline.tfstate'
 
 
-        - task: TerraformTask@5
-          inputs:
-            provider: 'azurerm'
-            command: 'apply'
-            commandOptions: '-auto-approve "$(System.DefaultWorkingDirectory)/dev.tfplan"'
-            environmentServiceNameAzureRM: '$(backendServiceConnection)'
+#         - task: DownloadPipelineArtifact@2
+#           inputs:
+#             artifact: 'tfplan'
+#             targetPath: '$(System.DefaultWorkingDirectory)'
+
+
+#         - task: TerraformTask@5
+#           inputs:
+#             provider: 'azurerm'
+#             command: 'apply'
+#             commandOptions: '-auto-approve "$(System.DefaultWorkingDirectory)/dev.tfplan"'
+#             environmentServiceNameAzureRM: '$(backendServiceConnection)'
 
         
 
