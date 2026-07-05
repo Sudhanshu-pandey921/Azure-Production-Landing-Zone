@@ -5,6 +5,11 @@ trigger:
    
 pool: prod-pool
 
+variables:
+     backendServiceConnection: 'su-sc'
+     brg: 'backendrg1'
+     bstg: 'backendstg1'
+
 
 ## stage 1- fmt
 stages:
@@ -36,9 +41,9 @@ stages:
           inputs:
             provider: 'azurerm'
             command: 'init'
-            backendServiceArm: 'su-sc'
-            backendAzureRmResourceGroupName: 'backendrg1'
-            backendAzureRmStorageAccountName: 'backendstg1'
+            backendServiceArm: '$(backendServiceConnection)'
+            backendAzureRmResourceGroupName: '$(brg)'
+            backendAzureRmStorageAccountName: '$(bstg)'
             backendAzureRmContainerName: 'backendcnt10'
             backendAzureRmKey: 'pipeline.tfstate'
 
@@ -57,9 +62,9 @@ stages:
           inputs:
             provider: 'azurerm'
             command: 'init'
-            backendServiceArm: 'su-sc'
+            backendServiceArm: '$(backendServiceConnection)'
             backendAzureRmResourceGroupName: 'backendrg1'
-            backendAzureRmStorageAccountName: 'backendstg1'
+            backendAzureRmStorageAccountName: '$(bstg)'
             backendAzureRmContainerName: 'backendcnt10'
             backendAzureRmKey: 'pipeline.tfstate'
 
@@ -83,9 +88,9 @@ stages:
           inputs:
             provider: 'azurerm'
             command: 'init'
-            backendServiceArm: 'su-sc'
+            backendServiceArm: '$(backendServiceConnection)'
             backendAzureRmResourceGroupName: 'backendrg1'
-            backendAzureRmStorageAccountName: 'backendstg1'
+            backendAzureRmStorageAccountName: '$(bstg)'
             backendAzureRmContainerName: 'backendcnt10'
             backendAzureRmKey: 'pipeline.tfstate'
 
@@ -93,7 +98,7 @@ stages:
           inputs:
             provider: 'azurerm'
             command: 'plan'
-            environmentServiceNameAzureRM: 'su-sc'
+            environmentServiceNameAzureRM: '$(backendServiceConnection)'
             commandOptions: '-var-file="environments/dev/terraform.tfvars" -out="dev.tfplan"'
 
 
@@ -133,9 +138,9 @@ stages:
           inputs:
             provider: 'azurerm'
             command: 'init'
-            backendServiceArm: 'su-sc'
+            backendServiceArm: '$(backendServiceConnection)'
             backendAzureRmResourceGroupName: 'backendrg1'
-            backendAzureRmStorageAccountName: 'backendstg1'
+            backendAzureRmStorageAccountName: '$(bstg)'
             backendAzureRmContainerName: 'backendcnt10'
             backendAzureRmKey: 'pipeline.tfstate'
 
@@ -151,7 +156,7 @@ stages:
             provider: 'azurerm'
             command: 'apply'
             commandOptions: '-auto-approve "$(System.DefaultWorkingDirectory)/dev.tfplan"'
-            environmentServiceNameAzureRM: 'su-sc'
+            environmentServiceNameAzureRM: '$(backendServiceConnection)'
 
         
 
