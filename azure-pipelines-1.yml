@@ -41,4 +41,107 @@ stages:
             backendAzureRmStorageAccountName: 'backendstg1'
             backendAzureRmContainerName: 'backendcnt10'
             backendAzureRmKey: 'pipeline.tfstate'
+
+## stage 3- validate
+  - stage: validate
+    displayName: Validate
+    dependsOn:  init
+
+    jobs:
+      - job: terraformvalidate
+        steps:
+          
+        - checkout: self
+
+        - task: TerraformTask@5
+          inputs:
+            provider: 'azurerm'
+            command: 'init'
+            backendServiceArm: 'su-sc'
+            backendAzureRmResourceGroupName: 'backendrg1'
+            backendAzureRmStorageAccountName: 'backendstg1'
+            backendAzureRmContainerName: 'backendcnt10'
+            backendAzureRmKey: 'pipeline.tfstate'
+
+        - task: TerraformTask@5
+          inputs:
+            provider: 'azurerm'
+            command: 'validate'
+
+## stage-4 plan
+  - stage: plan
+    displayName: Plan
+    dependsOn: validate
+
+    jobs:
+      - job: terraformplan
+        steps:
+
+        - checkout: self 
+
+        - task: TerraformTask@5
+          inputs:
+            provider: 'azurerm'
+            command: 'init'
+            backendServiceArm: 'su-sc'
+            backendAzureRmResourceGroupName: 'backendrg1'
+            backendAzureRmStorageAccountName: 'backendstg1'
+            backendAzureRmContainerName: 'backendcnt10'
+            backendAzureRmKey: 'pipeline.tfstate'
+
+        - task: TerraformTask@5
+          inputs:
+            provider: 'azurerm'
+            command: 'plan'
+            environmentServiceNameAzureRM: 'su-sc'
+            commandOptions: '-var-file="environments/dev/terraform.tfvars" -out="dev.tfplan"'
+
+            
+## stage-5- Manual Approval
+  - stage: ManualApproval
+    displayName:  Manual Approval
+    dependsOn: plan
+    jobs:
+      - job:  ManualApproval
+        pool: server
+        
+        steps:
+          - task: ManualValidation@1
+            inputs:
+              notifyUsers: 'sp2529437@gmail.com'
+              approvers: 'sp2529437@gmail.com'
+              instructions: 'please verify before apply'
+
+## stage-6 apply
+  - stage: Apply
+    displayName: terraform apply
+    dependsOn: ManualApproval
+
+    jobs:
+      - job: terraformapply
+        steps:
+        
+        - checkout: self
+
+        - task: TerraformTask@5
+          inputs:
+            provider: 'azurerm'
+            command: 'init'
+            backendServiceArm: 'su-sc'
+            backendAzureRmResourceGroupName: 'backendrg1'
+            backendAzureRmStorageAccountName: 'backendstg1'
+            backendAzureRmContainerName: 'backendcnt10'
+            backendAzureRmKey: 'pipeline.tfstate'
+
+
+        - task: TerraformTask@5
+          inputs:
+            provider: 'azurerm'
+            command: 'apply'
+            commandOptions:  '-auto-approve dev.tfplan'
+            environmentServiceNameAzureRM: 'su-sc'
+
+        
+
+        
           
