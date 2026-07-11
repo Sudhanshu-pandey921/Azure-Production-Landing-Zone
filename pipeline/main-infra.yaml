@@ -78,7 +78,7 @@ stages:
             provider: 'azurerm'
             command: 'plan'
             environmentServiceNameAzureRM: '$(backendServiceConnection)'
-            commandOptions: '-var-file="environments/${{ parameters.environment }}/${{ parameters.environment }}.tfvars" -out="${{ parameters.environment }}.tfplan"'
+            commandOptions: '-var-file="environments/${{ parameters.environment }}/terraform.tfvars" -out="${{ parameters.environment }}.tfvars" -out="${{ parameters.environment }}.tfplan"'
 
 
         - task: PublishPipelineArtifact@1
