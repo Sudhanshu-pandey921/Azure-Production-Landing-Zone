@@ -1,0 +1,132 @@
+trigger:
+ branches:
+   include:
+     - main
+   
+pool: prod-pool
+
+parameters:
+  - name: environment
+    displayName: Select Environment
+    type: string
+    default: dev
+    values:
+      - dev
+      - qa
+      - prod
+
+variables:
+  - group: variable-group
+
+
+## stage 1- fmt
+stages:
+  - stage: fmt
+    displayName: terraform fmt
+
+    jobs:
+      - job: fmt
+        steps:
+        
+        - checkout: self
+
+        - task: PowerShell@2
+          inputs:
+            targetType: 'inline'
+            script: 'terraform fmt -recursive'
+
+## stage 2- init
+  - stage: init
+    displayName: Init
+    dependsOn: fmt
+     
+    jobs:
+      - job: terraforminit
+        steps:
+        - template: ../templates/terraform-init.yaml
+
+       
+## stage 3- validate
+  - stage: validate
+    displayName: Validate
+    dependsOn:  init
+
+    jobs:
+      - job: terraformvalidate
+        steps:
+        - template: ../templates/terraform-init.yaml
+        
+
+        - task: TerraformTask@5
+          inputs:
+            provider: 'azurerm'
+            command: 'validate'
+
+## stage-4 plan
+  - stage: plan
+    displayName: Plan
+    dependsOn: validate
+
+    jobs:
+      - job: terraformplan
+        steps:
+        - template: ../templates/terraform-init.yaml
+
+
+        - task: TerraformTask@5
+          inputs:
+            provider: 'azurerm'
+            command: 'plan'
+            environmentServiceNameAzureRM: '$(backendServiceConnection)'
+            commandOptions: '-var-file="environments/${{ parameters.environment }}/${{ parameters.environment }}.tfvars" -out="${{ parameters.environment }}.tfplan"'
+
+
+        - task: PublishPipelineArtifact@1
+          inputs:
+            
+            targetPath: '$(System.DefaultWorkingDirectory)/${{ parameters.environment }}.tfplan'
+            artifact: 'tfplan'
+
+            
+# ## stage-5- Manual Approval
+  - stage: ManualApproval
+    displayName:  Manual Approval
+    dependsOn: plan
+    jobs:
+      - job:  ManualApproval
+        pool: server
+        
+        steps:
+          - task: ManualValidation@1
+            inputs:
+              notifyUsers: 'sp2529437@gmail.com'
+              approvers: 'sp2529437@gmail.com'
+              instructions: 'please verify before apply'
+
+## stage-6 apply
+  - stage: Apply
+    displayName: terraform apply
+    dependsOn: ManualApproval
+
+    jobs:
+      - job: terraformapply
+        steps:
+        - template: ../templates/terraform-init.yaml
+        
+        
+
+
+        - task: DownloadPipelineArtifact@2
+          inputs:
+            artifact: 'tfplan'
+            targetPath: '$(System.DefaultWorkingDirectory)'
+
+
+        - task: TerraformTask@5
+          inputs:
+            provider: 'azurerm'
+            command: 'apply'
+            commandOptions: '-auto-approve "$(System.DefaultWorkingDirectory)/${{ parameters.environment }}.tfplan"'
+            environmentServiceNameAzureRM: '$(backendServiceConnection)'
+
+        

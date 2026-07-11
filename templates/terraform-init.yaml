@@ -1,0 +1,12 @@
+ steps:
+        - checkout: self
+
+        - task: TerraformTask@5
+          inputs:
+            provider: 'azurerm'
+            command: 'init'
+            backendServiceArm: '$(backendServiceConnection)'
+            backendAzureRmResourceGroupName: '$(brg)'
+            backendAzureRmStorageAccountName: '$(bstg)'
+            backendAzureRmContainerName: 'backendcnt10'
+            backendAzureRmKey: 'pipeline.tfstate'
