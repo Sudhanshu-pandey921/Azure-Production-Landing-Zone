@@ -79,13 +79,6 @@ stages:
               args: '--format json --out tfsec-report.json'
               dir: '$(System.DefaultWorkingDirectory)'
 
-          - task: PublishPipelineArtifact@1
-            
-            inputs:
-              targetPath: '$(System.DefaultWorkingDirectory)/tfsec-report.json'
-              artifact: 'tfsec-report'
-              publishLocation: 'pipeline'
-
 
           - powershell: |
               Write-Host "Current Directory:"
@@ -95,6 +88,17 @@ stages:
               Get-ChildItem -Path $(System.DefaultWorkingDirectory) -Recurse
               displayName: "Find tfsec report"
             
+
+          - task: PublishPipelineArtifact@1
+            condition: always()
+            
+            inputs:
+              targetPath: '$(System.DefaultWorkingDirectory)/tfsec-report.json'
+              artifact: 'tfsec-report'
+              publishLocation: 'pipeline'
+
+
+       
           
           
 
