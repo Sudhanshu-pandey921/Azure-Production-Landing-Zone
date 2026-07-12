@@ -85,7 +85,16 @@ stages:
               targetPath: '$(System.DefaultWorkingDirectory)/tfsec-report.json'
               artifact: 'tfsec-report'
               publishLocation: 'pipeline'
-          
+
+
+          - powershell: |
+              Write-Host "Current Directory:"
+              Get-Location
+
+              Write-Host "Searching tfsec report..."
+              Get-ChildItem -Path $(System.DefaultWorkingDirectory) -Recurse
+              displayName: "Find tfsec report"
+            
           
           
 
