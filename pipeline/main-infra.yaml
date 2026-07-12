@@ -62,6 +62,33 @@ stages:
             provider: 'azurerm'
             command: 'validate'
 
+
+## stage-4 tfsec
+  - stage: tfsec
+    displayName: TfSec
+    dependsOn: validate
+
+    jobs:
+      - job: tfsec
+        steps:
+          - template: ../templates/terraform-init.yaml
+          
+          - task: tfsec@1
+            inputs:
+              version: 'v1.26.0'
+              args: '--format json --out tfsec-report.json'
+              dir: '$(System.DefaultWorkingDirectory)'
+
+          - task: PublishPipelineArtifact@1
+            
+            inputs:
+              targetPath: '$(System.DefaultWorkingDirectory)/tfsec-report.json'
+              artifact: 'tfsec-report'
+              publishLocation: 'pipeline'
+          
+          
+          
+
 ## stage-4 plan
   - stage: plan
     displayName: Plan
